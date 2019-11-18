@@ -56,6 +56,16 @@ func (g *Group) PlayerIds() []PlayerId {
 
 // 管理统计函数 ==========
 
+func (g *Group) PlayerNotRemovedCount() int {
+	sum := 0
+	for i := range g.Players {
+		if !g.removed[i] {
+			sum++
+		}
+	}
+	return sum
+}
+
 func (g *Group) PlayerNotRemovedIds() []PlayerId {
 	s := make([]PlayerId, 0, len(g.Players))
 	for i, p := range g.Players {
@@ -68,25 +78,35 @@ func (g *Group) PlayerNotRemovedIds() []PlayerId {
 
 func (g *Group) StandardDeviation() float64 {
 	sum := float64(0)
+	count := 0
 	for _, p := range g.Players {
 		sum += float64(p.Score)
+		count++
 	}
-	mean := sum / float64(len(g.Players))
+	if count <= 0 {
+		return 0
+	}
+	mean := sum / float64(count)
 
 	sum = 0
 	for _, p := range g.Players {
 		sum += math.Pow(float64(p.Score)-mean, 2)
 	}
-	sd := math.Sqrt(sum / 10)
+	sd := math.Sqrt(sum / float64(count))
 	return sd
 }
 
 func (g *Group) AverageWaitTime(currentTime Time) float64 {
 	sum := 0
+	count := 0
 	for _, p := range g.Players {
 		sum += int(currentTime - p.JoinTime)
+		count++
 	}
-	mean := float64(sum) / float64(len(g.Players))
+	if count <= 0 {
+		return 0
+	}
+	mean := float64(sum) / float64(count)
 	return mean
 }
 
@@ -391,12 +411,33 @@ func (m *Matcher) PlayerInQueueIds() []PlayerId {
 	return s
 }
 
+func (m *Matcher) PlayerNotRemovedCount() int {
+	sum := 0
+	for _, g := range m.groups {
+		sum += g.PlayerNotRemovedCount()
+	}
+	return sum
+}
+
 func (m *Matcher) Groups() []*Group {
 	return m.groups
 }
 
 func (m *Matcher) GroupCount() int {
 	return len(m.groups)
+}
+
+func (m *Matcher) GroupStandardDeviation() float64 {
+	sum := float64(0)
+	count := 0
+	for _, g := range m.groups {
+		sum += g.StandardDeviation()
+		count++
+	}
+	if count <= 0 {
+		return 0
+	}
+	return sum / float64(count)
 }
 
 func (m *Matcher) GroupsPlayerIds() [][]PlayerId {

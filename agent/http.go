@@ -49,27 +49,29 @@ type MatchingStatusData struct {
 }
 
 type MatcherStatsData struct {
-	PlayerCount        int     `json:"player_count"`
-	PlayerInQueueCount int     `json:"player_in_queue_count"`
-	GroupCount         int     `json:"group_count"`
-	AverageWaitTime    float64 `json:"average_wait_time"`
-	ServerRunningTime  float64 `json:"server_running_time"`
-	JoinRequestCount   int     `json:"join_request_count"`
-	StatusRequestCount int     `json:"status_request_count"`
-	LeaveRequestCount  int     `json:"leave_request_count"`
-	RemoveRequestCount int     `json:"remove_request_count"`
-	BadRequestCount    int     `json:"bad_request_count"`
-	ErrorCount         int     `json:"error_count"`
-	JoinOKCount        int     `json:"join_ok_count"`
-	GetStatusOKCount   int     `json:"get_status_ok_count"`
-	JoinRequestQPS     float64 `json:"join_request_qps"`
-	StatusRequestQPS   float64 `json:"status_request_qps"`
-	LeaveRequestQPS    float64 `json:"leave_request_qps"`
-	RemoveRequestQPS   float64 `json:"remove_request_qps"`
-	BadRequestQPS      float64 `json:"bad_request_qps"`
-	ErrorQPS           float64 `json:"error_qps"`
-	JoinOKQPS          float64 `json:"join_ok_qps"`
-	GetStatusOKQPS     float64 `json:"get_status_ok_qps"`
+	PlayerCount            int     `json:"player_count"`
+	PlayerInQueueCount     int     `json:"player_in_queue_count"`
+	PlayerNotRemovedCount  int     `json:"player_not_removed_count"`
+	GroupCount             int     `json:"group_count"`
+	GroupStandardDeviation float64 `json:"group_standard_deviation"`
+	AverageWaitTime        float64 `json:"average_wait_time"`
+	ServerRunningTime      float64 `json:"server_running_time"`
+	JoinRequestCount       int     `json:"join_request_count"`
+	StatusRequestCount     int     `json:"status_request_count"`
+	LeaveRequestCount      int     `json:"leave_request_count"`
+	RemoveRequestCount     int     `json:"remove_request_count"`
+	BadRequestCount        int     `json:"bad_request_count"`
+	ErrorCount             int     `json:"error_count"`
+	JoinOKCount            int     `json:"join_ok_count"`
+	GetStatusOKCount       int     `json:"get_status_ok_count"`
+	JoinRequestQPS         float64 `json:"join_request_qps"`
+	StatusRequestQPS       float64 `json:"status_request_qps"`
+	LeaveRequestQPS        float64 `json:"leave_request_qps"`
+	RemoveRequestQPS       float64 `json:"remove_request_qps"`
+	BadRequestQPS          float64 `json:"bad_request_qps"`
+	ErrorQPS               float64 `json:"error_qps"`
+	JoinOKQPS              float64 `json:"join_ok_qps"`
+	GetStatusOKQPS         float64 `json:"get_status_ok_qps"`
 }
 
 func NewHttpMatchingServer(maxTime matcher.Time, maxScore matcher.PlayerScore, scoreGroupLen int) *HttpMatchingServer {
@@ -196,10 +198,12 @@ func (s *HttpMatchingServer) HandleRemove(ctx *fasthttp.RequestCtx) {
 func (s *HttpMatchingServer) HandleStats(ctx *fasthttp.RequestCtx) {
 	s.mu.Lock()
 	data := &MatcherStatsData{
-		PlayerCount:        s.Matcher.PlayerCount(),
-		PlayerInQueueCount: s.Matcher.PlayerInQueueCount(),
-		GroupCount:         s.Matcher.GroupCount(),
-		AverageWaitTime:    s.Matcher.AverageWaitTime(),
+		PlayerCount:            s.Matcher.PlayerCount(),
+		PlayerInQueueCount:     s.Matcher.PlayerInQueueCount(),
+		PlayerNotRemovedCount:  s.Matcher.PlayerNotRemovedCount(),
+		GroupCount:             s.Matcher.GroupCount(),
+		GroupStandardDeviation: s.Matcher.GroupStandardDeviation(),
+		AverageWaitTime:        s.Matcher.AverageWaitTime(),
 	}
 	s.mu.Unlock()
 	now := time.Now()
