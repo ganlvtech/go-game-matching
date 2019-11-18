@@ -151,11 +151,11 @@ func NewMatcher(maxTime Time, maxScore PlayerScore, scoreGroupLen int) *Matcher 
 		groups:        make([]*Group, 0, 64),
 		waitTime:      NewWaitTime(scoreGroupCount, float64(maxTime)),
 		ScoreRadiusFunc: func(deltaT Time) PlayerScore {
-			if deltaT > maxTime {
-				return maxScore
-			} else {
-				return maxScore/8 + maxScore*PlayerScore(deltaT)/PlayerScore(maxTime*7/8)
+			score := maxScore/30 + maxScore*PlayerScore(deltaT)/PlayerScore(maxTime/2)/2
+			if score > maxScore {
+				score = maxScore
 			}
+			return score
 		},
 	}
 }
@@ -445,6 +445,10 @@ func (m *Matcher) GroupsPlayerIds() [][]PlayerId {
 		s[i] = g.PlayerIds()
 	}
 	return s
+}
+
+func (m *Matcher) GroupWaitTime() []float64 {
+	return m.waitTime.Groups
 }
 
 func (m *Matcher) AverageWaitTime() float64 {

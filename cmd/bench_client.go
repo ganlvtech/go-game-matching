@@ -12,15 +12,19 @@ import (
 )
 
 func main() {
-	const concurrent = 100
+	const concurrent = 50
 	isRun := true
 	for i := 0; i < concurrent; i++ {
 		go func(base int) {
-			time.Sleep(1000 * time.Millisecond)
 			tr := &http.Transport{}
 			client := &http.Client{Transport: tr}
 			for id := base; isRun; id++ {
-				score := int(rand.Uint32()%300)
+				score := int(150 + 50*rand.NormFloat64())
+				if score < 0 {
+					score = 0
+				} else if score >= 300 {
+					score = 299
+				}
 				resp, err := client.Get("http://127.0.0.1:8000/join?id=" + strconv.Itoa(id) + "&score=" + strconv.Itoa(score))
 				if err != nil {
 					panic(err)
@@ -35,6 +39,7 @@ func main() {
 				if r.Code != 0 {
 					panic(r.Msg)
 				}
+				time.Sleep(time.Duration(rand.Uint32()%2000) * time.Millisecond)
 			}
 		}(i * 1000000)
 	}

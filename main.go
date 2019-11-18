@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
@@ -31,8 +32,21 @@ func main() {
 
 	matchingServer := agent.NewHttpMatchingServer(matcher.Time(maxTime), matcher.PlayerScore(maxScore), scoreGroupLen)
 	server := fasthttp.Server{
-		Handler: matchingServer.HandleHTTP,
-		Name:    "go-game-matching",
+		Handler: func(ctx *fasthttp.RequestCtx) {
+			if string(ctx.Request.URI().Path()) == "/" {
+				b, err := ioutil.ReadFile("web/index.html")
+				if err != nil {
+					ctx.SetStatusCode(404)
+					return
+				}
+				ctx.SetStatusCode(200)
+				ctx.SetContentType("text/html; charset=utf-8")
+				_, _ = ctx.Write(b)
+				return
+			}
+			matchingServer.HandleHTTP(ctx)
+		},
+		Name: "go-game-matching",
 	}
 	isRun := true
 

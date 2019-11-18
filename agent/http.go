@@ -74,6 +74,19 @@ type MatcherStatsData struct {
 	GetStatusOKQPS         float64 `json:"get_status_ok_qps"`
 }
 
+type MatcherPlayerDetail struct {
+	Id       string `json:"id"`
+	JoinTime int    `json:"join_time"`
+	Score    int    `json:"score"`
+}
+
+type MatcherPlayerDistribute struct {
+	Id         string `json:"id"`
+	JoinTime   int    `json:"join_time"`
+	Score      int    `json:"score"`
+	GroupIndex int    `json:"group_index"`
+}
+
 func NewHttpMatchingServer(maxTime matcher.Time, maxScore matcher.PlayerScore, scoreGroupLen int) *HttpMatchingServer {
 	s := &HttpMatchingServer{
 		Matcher: matcher.NewMatcher(maxTime, maxScore, scoreGroupLen),
@@ -132,6 +145,15 @@ func (s *HttpMatchingServer) HandleHTTP(ctx *fasthttp.RequestCtx) {
 		data := s.Matcher.GroupsPlayerIds()
 		s.mu.Unlock()
 		writeJsonResponseOKWithData(ctx, data)
+	case "/group_wait_time":
+		s.mu.Lock()
+		data := s.Matcher.GroupWaitTime()
+		s.mu.Unlock()
+		writeJsonResponseOKWithData(ctx, data)
+	case "/group_player_details":
+		s.HandleGroupPlayerDetails(ctx)
+	case "/player_distribute":
+		s.HandlePlayerDistribute(ctx)
 	}
 }
 
@@ -234,6 +256,47 @@ func (s *HttpMatchingServer) HandleStats(ctx *fasthttp.RequestCtx) {
 	s.lastStats.JoinOKCount = s.Stats.JoinOKCount
 	s.lastStats.GetStatusOKCount = s.Stats.GetStatusOKCount
 	s.lastStatsTime = now
+}
+
+func (s *HttpMatchingServer) HandleGroupPlayerDetails(ctx *fasthttp.RequestCtx) {
+	now := int(time.Now().Unix())
+	s.mu.Lock()
+	groups := s.Matcher.Groups()
+	r := make([][]MatcherPlayerDetail, len(groups))
+	for i := range groups {
+		r[i] = make([]MatcherPlayerDetail, len(groups[i].Players))
+		for j, p := range groups[i].Players {
+			r[i][j].Id = string(p.Id)
+			r[i][j].JoinTime = int(p.JoinTime) - now
+			r[i][j].Score = int(p.Score)
+		}
+	}
+	s.mu.Unlock()
+	writeJsonResponseOKWithData(ctx, r)
+}
+
+func (s *HttpMatchingServer) HandlePlayerDistribute(ctx *fasthttp.RequestCtx) {
+	now := int(time.Now().Unix())
+	s.mu.Lock()
+	groupIndexMap := make(map[*matcher.Group]int, s.Matcher.GroupCount())
+	for i, g := range s.Matcher.Groups() {
+		groupIndexMap[g] = i
+	}
+	r := make([]MatcherPlayerDistribute, s.Matcher.PlayerCount())
+	i := 0
+	for _, p := range s.Matcher.Players() {
+		r[i].Id = string(p.Id)
+		r[i].JoinTime = int(p.JoinTime) - now
+		r[i].Score = int(p.Score)
+		if p.Group == nil {
+			r[i].GroupIndex = -1
+		} else {
+			r[i].GroupIndex = groupIndexMap[p.Group]
+		}
+		i++
+	}
+	s.mu.Unlock()
+	writeJsonResponseOKWithData(ctx, r)
 }
 
 func writeJsonResponse(ctx *fasthttp.RequestCtx, v interface{}) {

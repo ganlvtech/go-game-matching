@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdn.bootcss.com/axios/0.19.0/axios.min.js"></script>
+    <script src="https://cdn.bootcss.com/Chart.js/2.8.0/Chart.min.js"></script>
+</head>
+<body>
+    <canvas id="myChart" width="800" height="600"></canvas>
+    <script>
+      axios.get('/player_distribute').then(response => {
+        const ctx = document.getElementById('myChart');
+        const datasets = [
+          {
+            label: '-1',
+            backgroundColor: 'rgb(127,127,127)',
+            borderColor: 'rgb(0,0,0)',
+            pointRadius: 5,
+            data: [],
+          },
+        ];
+        response.data.data.forEach(player => {
+          let index = player.group_index + 1;
+          let dataset = datasets[index];
+          if (dataset === undefined) {
+            const color = 'rgb(' + Math.floor(100 + Math.random() * 130) + ','
+                + Math.floor(100 + Math.random() * 130) + ',' +
+                Math.floor(100 + Math.random() * 130) + ')';
+            datasets[index] = {
+              label: player.group_index,
+              backgroundColor: color,
+              pointRadius: 5,
+              data: [],
+            };
+          }
+          datasets[index].data.push({
+            x: player.join_time,
+            y: player.score,
+          });
+        });
+        let scaledDatasetIndex = [];
+        let chart = new Chart(ctx, {
+          type: 'scatter',
+          data: {
+            datasets: datasets,
+          },
+          options: {
+            animation: {
+              duration: 100,
+            },
+            onHover: function(e, els) {
+              scaledDatasetIndex.forEach(index => {
+                chart.data.datasets[index].pointRadius = 5;
+              });
+              scaledDatasetIndex = [];
+              if (els.length > 0) {
+                chart.data.datasets[els[0]._datasetIndex].pointRadius = 10;
+                scaledDatasetIndex.push(els[0]._datasetIndex);
+              }
+              chart.update();
+            },
+            scales: {
+              xAxes: [
+                {
+                  type: 'linear',
+                  position: 'bottom',
+                },
+              ],
+            },
+          },
+        });
+      });
+    </script>
+</body>
+</html>
