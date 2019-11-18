@@ -4,7 +4,6 @@ import (
 	"math"
 
 	"github.com/wangjia184/sortedset"
-	"golang.org/x/tools/container/intsets"
 )
 
 const (
@@ -327,7 +326,7 @@ func (m *Matcher) getMinTime(currentTime Time) Time {
 }
 
 func (m *Matcher) AutoRemove(currentTime Time) {
-	for _, v := range m.playerQueue.GetByScoreRange(sortedset.SCORE(intsets.MinInt), sortedset.SCORE(m.getMinTime(currentTime)), &sortedset.GetByScoreRangeOptions{ExcludeEnd: true}) {
+	for _, v := range m.playerQueue.GetByScoreRange(sortedset.SCORE(0), sortedset.SCORE(m.getMinTime(currentTime)), &sortedset.GetByScoreRangeOptions{ExcludeEnd: true}) {
 		m.Remove(PlayerId(v.Key()))
 	}
 }
@@ -336,7 +335,7 @@ func (m *Matcher) Match(currentTime Time, count int) {
 	m.AutoRemove(currentTime)
 	m.waitTime.AddTimeAuto(float64(currentTime))
 
-	for _, v := range m.playerQueue.GetByScoreRange(sortedset.SCORE(intsets.MinInt), sortedset.SCORE(currentTime), nil) {
+	for _, v := range m.playerQueue.GetByScoreRange(sortedset.SCORE(0), sortedset.SCORE(currentTime), nil) {
 		_ = m.MatchForPlayer(PlayerId(v.Key()), currentTime, count)
 	}
 
